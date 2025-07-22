@@ -4,11 +4,6 @@ on:
   workflow_dispatch:  # Manual trigger
   push:
     branches: [ main, master ]
-    paths: 
-      - 'outlook_web_summarizer_hybrid.py'
-      - 'build_windows_exe.py'
-      - 'outlook_hybrid_client.py'
-      - '.github/workflows/build-windows.yml'
 
 jobs:
   build-windows:
@@ -29,47 +24,46 @@ jobs:
         pip install pyinstaller playwright requests msal
         
     - name: Install Playwright browsers
-      run: python -m playwright install chromium --with-deps
-      
+      run: |
+        python -m playwright install chromium
+        
     - name: Create hybrid files
       run: |
-        python -c "
-        import build_windows_exe
-        build_windows_exe.create_hybrid_files()
-        build_windows_exe.create_version_info()
-        print('✅ Hybrid files created')
-        "
+        python -c "import build_windows_exe; build_windows_exe.create_hybrid_files(); build_windows_exe.create_version_info(); print('Hybrid files created')"
         
     - name: List files for debugging
       run: |
         echo "=== Files in directory ==="
         dir
         echo "=== Checking for hybrid files ==="
-        if (Test-Path "outlook_hybrid_client_windows.py") { echo "✅ outlook_hybrid_client_windows.py exists" } else { echo "❌ outlook_hybrid_client_windows.py missing" }
-        if (Test-Path "outlook_web_summarizer_hybrid.py") { echo "✅ outlook_web_summarizer_hybrid.py exists" } else { echo "❌ outlook_web_summarizer_hybrid.py missing" }
+        if (Test-Path "outlook_hybrid_client_windows.py") { echo "outlook_hybrid_client_windows.py exists" } else { echo "outlook_hybrid_client_windows.py missing" }
+        if (Test-Path "outlook_web_summarizer_hybrid.py") { echo "outlook_web_summarizer_hybrid.py exists" } else { echo "outlook_web_summarizer_hybrid.py missing" }
         
     - name: Build Windows executable
       run: |
-        echo "🔨 Building Windows executable..."
-        pyinstaller outlook_hybrid_client_windows.py --onefile --windowed --name=MailAgent_Client --hidden-import=playwright --hidden-import=playwright.sync_api --hidden-import=sqlite3 --hidden-import=requests --hidden-import=msal --hidden-import=tkinter --hidden-import=webbrowser --collect-all=playwright --add-data="outlook_web_summarizer_hybrid.py;." --clean --noconfirm
+        echo "Building Windows executable..."
+        pyinstaller outlook_hybrid_client_windows.py --onefile --windowed --name=MailAgent_Client --hidden-import=playwright --hidden-import=sqlite3 --hidden-import=requests --hidden-import=msal --hidden-import=tkinter --hidden-import=webbrowser --add-data="outlook_web_summarizer_hybrid.py;." --clean --noconfirm
         
     - name: Check build results
       run: |
         echo "=== Build Results ==="
         if (Test-Path "dist/MailAgent_Client.exe") {
             $size = (Get-Item "dist/MailAgent_Client.exe").Length / 1MB
-            echo "✅ MailAgent_Client.exe built successfully!"
-            echo "📦 File size: $([math]::Round($size, 2)) MB"
-            echo "📁 Location: dist/MailAgent_Client.exe"
+            echo "MailAgent_Client.exe built successfully!"
+            echo "File size: $([math]::Round($size, 2)) MB"
+            echo "Location: dist/MailAgent_Client.exe"
         } else {
-            echo "❌ Build failed - executable not found"
+            echo "Build failed - executable not found"
             echo "=== Contents of dist folder ==="
             if (Test-Path "dist") { dir dist } else { echo "dist folder doesn't exist" }
+            echo "=== PyInstaller output ==="
+            if (Test-Path "build") { dir build } else { echo "build folder doesn't exist" }
+            exit 1
         }
         
     - name: Create release package
       run: |
-        echo "📦 Creating release package..."
+        echo "Creating release package..."
         mkdir release_package
         copy "dist\MailAgent_Client.exe" "release_package\"
         copy "README_USER.txt" "release_package\"
