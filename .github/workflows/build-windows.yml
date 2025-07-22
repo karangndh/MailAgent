@@ -1,0 +1,95 @@
+name: Build Windows Executable
+
+on:
+  workflow_dispatch:  # Manual trigger
+  push:
+    branches: [ main, master ]
+    paths: 
+      - 'outlook_web_summarizer_hybrid.py'
+      - 'build_windows_exe.py'
+      - 'outlook_hybrid_client.py'
+      - '.github/workflows/build-windows.yml'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller playwright requests msal
+        
+    - name: Install Playwright browsers
+      run: python -m playwright install chromium --with-deps
+      
+    - name: Create hybrid files
+      run: |
+        python -c "
+        import build_windows_exe
+        build_windows_exe.create_hybrid_files()
+        build_windows_exe.create_version_info()
+        print('✅ Hybrid files created')
+        "
+        
+    - name: List files for debugging
+      run: |
+        echo "=== Files in directory ==="
+        dir
+        echo "=== Checking for hybrid files ==="
+        if (Test-Path "outlook_hybrid_client_windows.py") { echo "✅ outlook_hybrid_client_windows.py exists" } else { echo "❌ outlook_hybrid_client_windows.py missing" }
+        if (Test-Path "outlook_web_summarizer_hybrid.py") { echo "✅ outlook_web_summarizer_hybrid.py exists" } else { echo "❌ outlook_web_summarizer_hybrid.py missing" }
+        
+    - name: Build Windows executable
+      run: |
+        echo "🔨 Building Windows executable..."
+        pyinstaller outlook_hybrid_client_windows.py --onefile --windowed --name=MailAgent_Client --hidden-import=playwright --hidden-import=playwright.sync_api --hidden-import=sqlite3 --hidden-import=requests --hidden-import=msal --hidden-import=tkinter --hidden-import=webbrowser --collect-all=playwright --add-data="outlook_web_summarizer_hybrid.py;." --clean --noconfirm
+        
+    - name: Check build results
+      run: |
+        echo "=== Build Results ==="
+        if (Test-Path "dist/MailAgent_Client.exe") {
+            $size = (Get-Item "dist/MailAgent_Client.exe").Length / 1MB
+            echo "✅ MailAgent_Client.exe built successfully!"
+            echo "📦 File size: $([math]::Round($size, 2)) MB"
+            echo "📁 Location: dist/MailAgent_Client.exe"
+        } else {
+            echo "❌ Build failed - executable not found"
+            echo "=== Contents of dist folder ==="
+            if (Test-Path "dist") { dir dist } else { echo "dist folder doesn't exist" }
+        }
+        
+    - name: Create release package
+      run: |
+        echo "📦 Creating release package..."
+        mkdir release_package
+        copy "dist\MailAgent_Client.exe" "release_package\"
+        copy "README_USER.txt" "release_package\"
+        echo "100.0.255.3" > "release_package\host_ip.txt"
+        echo "=== Package Contents ==="
+        dir release_package
+        
+    - name: Upload executable as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: MailAgent_Client_Windows
+        path: release_package/
+        
+    - name: Create Release (if this is a tagged commit)
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          release_package/MailAgent_Client.exe
+          release_package/README_USER.txt
+          release_package/host_ip.txt
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 

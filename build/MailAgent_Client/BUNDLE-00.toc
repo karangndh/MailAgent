@@ -1,0 +1,3 @@
+([('MailAgent_Client',
+   '/Users/karangandhi/Documents/MailAgent/dist/MailAgent_Client',
+   'EXECUTABLE')],)

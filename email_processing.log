@@ -1,0 +1,103 @@
+Searching for emails using query: subject:"Letter Of Authorization" from:"Harshit Amar" from:Harshit.Amar@ril.com
+✓ Database and table created/verified
+Opening Outlook...
+Searching for emails using: subject:"Letter Of Authorization" from:"Harshit Amar" from:Harshit.Amar@ril.com
+Found 6 results in search page
+Queued: 'Dummy: Abascas Letter of Authorization' (Timestamp: 3:45 PM)
+Queued: 'Dummy: 098 Letter of Authorization' (Timestamp: 2:50 PM)
+Queued: 'Dummy: 123 Letter of Authorization' (Timestamp: 2:46 PM)
+Queued: 'Dummy: ABC Letter of Authorization' (Timestamp: Mon 10:33 AM)
+Queued: 'Dummy: PQR Letter of Authorization' (Timestamp: Mon 10:32 AM)
+Queued: 'Dummy: XYZ Letter Of Authorization' (Timestamp: Fri 6/13)
+
+Found 6 unique emails to process
+
+================================================================================
+PROCESSING EMAILS INDIVIDUALLY
+================================================================================
+
+------------------------------------------------------------
+Processing Email #1/6
+Subject: 'Dummy: Abascas Letter of Authorization'
+Timestamp: 3:45 PM
+  ✓ Found email with timestamp: 3:45 PM
+  🔍 Analyzing email structure...
+    📧 Current email content: 82 characters
+    🔍 Content analysis:
+      Has Assistant data: False
+      Looks like response only: False
+    ✅ Content is substantial but ambiguous → Treating as single email
+    🎯 DECISION: Single email (no expansion needed)
+  📧 Single email: Reading content directly...
+    ✓ Extracted single email content (82 characters)
+  ✓ Email body extracted successfully (82 characters)
+    Snippet: This is a test invite to check validation.    Regards, Harshit Amar +91-8104980028...
+    🔍 Extracting data from email body (82 chars)
+    📄 Email Subject: 'Dummy: Abascas Letter of Authorization'
+    📝 Content preview: This is a test invite to check validation.    Regards, Harshit Amar +91-8104980028...
+    ⚠️  No Assistant ID found
+    ⚠️  No Assistant Name found
+    ⚠️  No Account found using 'has registered' pattern
+    ⚠️  No Account found using any pattern
+    Debug - First 10 lines: ['This is a test invite to check validation.\xa0', '', '', 'Regards,', 'Harshit Amar', '+91-8104980028']
+    🚨 WARNING: No Assistant ID or Name found - this email will be SKIPPED!
+    📊 Debug Summary:
+      - Assistant ID: ''
+      - Assistant Name: ''
+      - Account: ''
+      - Email will be skipped because both ID and Name are empty
+  Extracted Data:
+    Assistant ID: ''
+    Assistant Name: ''
+    Account: ''
+  ⚠️  No Assistant ID or Assistant Name found - skipping
+
+------------------------------------------------------------
+Processing Email #2/6
+Subject: 'Dummy: 098 Letter of Authorization'
+Timestamp: 2:50 PM
+  🔄 Refreshing page for clean state...
+  ✗ Error processing email: Page.wait_for_timeout: Target page, context or browser has been closed
+
+------------------------------------------------------------
+Processing Email #3/6
+Subject: 'Dummy: 123 Letter of Authorization'
+Timestamp: 2:46 PM
+  🔄 Refreshing page for clean state...
+  ✗ Error processing email: Page.reload: Target page, context or browser has been closed
+
+------------------------------------------------------------
+Processing Email #4/6
+Subject: 'Dummy: ABC Letter of Authorization'
+Timestamp: Mon 10:33 AM
+  🔄 Refreshing page for clean state...
+  ✗ Error processing email: Page.reload: Target page, context or browser has been closed
+
+------------------------------------------------------------
+Processing Email #5/6
+Subject: 'Dummy: PQR Letter of Authorization'
+Timestamp: Mon 10:32 AM
+  🔄 Refreshing page for clean state...
+  ✗ Error processing email: Page.reload: Target page, context or browser has been closed
+
+------------------------------------------------------------
+Processing Email #6/6
+Subject: 'Dummy: XYZ Letter Of Authorization'
+Timestamp: Fri 6/13
+  🔄 Refreshing page for clean state...
+  ✗ Error processing email: Page.reload: Target page, context or browser has been closed
+
+================================================================================
+PROCESSING COMPLETE
+================================================================================
+🗃️  Processed 0 emails and added to database
+
+====================================================================================================
+DATABASE RECORDS:
+====================================================================================================
+Assistant ID         Assistant Name            Account              Authorization   Email Subject                 
+----------------------------------------------------------------------------------------------------
+asdfgh               Shashank's Assistant      Akshay's Organization Awaiting        Dummy: 123 Letter of Authori  
+mnbvcx               Sagar's Assistant         Sagar's Organization Awaiting        Dummy: 098 Letter of Authori  
+----------------------------------------------------------------------------------------------------
+Total records: 2

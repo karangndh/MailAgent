@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  mailagent:
+    build: .
+    container_name: mailagent
+    volumes:
+      - ./data:/app/data  # Persist database
+      - ./config.py:/app/config.py  # Mount configuration
+    ports:
+      - "8000:8000"  # Web interface port
+    environment:
+      - DISPLAY=${DISPLAY:-:0}  # For GUI apps if needed
+    depends_on:
+      - ollama
+    networks:
+      - mailagent-network
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - mailagent-network
+    restart: unless-stopped
+    # Automatically pull and run the llama3 model
+    command: sh -c "ollama serve & sleep 10 && ollama pull llama3 && wait"
+
+  # Optional: Web interface for the mail agent
+  mailagent-web:
+    build: .
+    container_name: mailagent-web
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+      - ./config.py:/app/config.py
+    depends_on:
+      - mailagent
+      - ollama
+    networks:
+      - mailagent-network
+    restart: unless-stopped
+    command: python web_interface.py  # We'll create this
+
+volumes:
+  ollama_data:
+    driver: local
+
+networks:
+  mailagent-network:
+    driver: bridge 

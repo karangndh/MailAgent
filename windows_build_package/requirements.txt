@@ -1,0 +1,4 @@
+msal
+playwright
+flask
+requests 

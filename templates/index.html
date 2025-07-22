@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mail Agent Dashboard</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0; padding: 20px; background: #f5f5f7;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .card { 
+            background: white; border-radius: 12px; padding: 24px; 
+            margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+        .status-item { 
+            padding: 16px; border-radius: 8px; text-align: center;
+            font-weight: 600;
+        }
+        .status-ok { background: #d4edda; color: #155724; }
+        .status-error { background: #f8d7da; color: #721c24; }
+        .btn { 
+            background: #007AFF; color: white; border: none; 
+            padding: 12px 24px; border-radius: 8px; cursor: pointer;
+            font-size: 16px; margin: 8px;
+        }
+        .btn:hover { background: #0056CC; }
+        .btn-secondary { background: #6c757d; }
+        .btn-secondary:hover { background: #545b62; }
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f8f9fa; font-weight: 600; }
+        .loading { text-align: center; padding: 40px; color: #666; }
+        .status-badge { 
+            padding: 4px 12px; border-radius: 12px; font-size: 12px; 
+            font-weight: 600; text-transform: uppercase;
+        }
+        .status-done { background: #d4edda; color: #155724; }
+        .status-awaiting { background: #fff3cd; color: #856404; }
+        .summary-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 20px; 
+        }
+        .summary-card { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; 
+            padding: 24px; 
+            border-radius: 12px; 
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .summary-card.approved { 
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+        .summary-card h3 { 
+            margin: 0 0 8px 0; 
+            font-size: 14px; 
+            opacity: 0.9; 
+            font-weight: 500;
+        }
+        .summary-card .count { 
+            font-size: 36px; 
+            font-weight: 700; 
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📧 Mail Agent Dashboard</h1>
+        
+        <div class="card">
+            <h2>System Status</h2>
+            <div class="status-grid" id="status-grid">
+                <div class="status-item">Loading...</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Actions</h2>
+            <button class="btn" onclick="runWebSearch()">🔍 Run Web Search</button>
+            <button class="btn btn-secondary" onclick="refreshEmails()">🔄 Refresh Emails</button>
+            <button class="btn btn-secondary" onclick="window.location.href='/config'">⚙️ Configuration</button>
+            <button class="btn btn-danger" onclick="clearDatabase()">🗑️ Clear Database</button>
+        </div>
+
+        <div class="card">
+            <h2>📊 Summary</h2>
+            <div class="summary-grid" id="summary-grid">
+                <div class="summary-card">
+                    <h3>Total Count of LOAs</h3>
+                    <div class="count" id="total-count">-</div>
+                </div>
+                <div class="summary-card approved">
+                    <h3>Approved</h3>
+                    <div class="count" id="approved-count">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Recent Emails</h2>
+            <div id="emails-container">
+                <div class="loading">Loading emails...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load system status
+        async function loadStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                const statusGrid = document.getElementById('status-grid');
+                statusGrid.innerHTML = `
+                    <div class="status-item ${data.database ? 'status-ok' : 'status-error'}">
+                        📁 Database: ${data.database ? 'OK' : 'Missing'}
+                    </div>
+                    <div class="status-item ${data.ollama ? 'status-ok' : 'status-error'}">
+                        🤖 Ollama: ${data.ollama ? 'Running' : 'Offline'}
+                    </div>
+                    <div class="status-item ${data.config ? 'status-ok' : 'status-error'}">
+                        ⚙️ Config: ${data.config ? 'Configured' : 'Missing'}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading status:', error);
+            }
+        }
+
+        // Load summary statistics
+        async function loadSummary() {
+            try {
+                const response = await fetch('/api/summary');
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('total-count').textContent = data.total_count;
+                    document.getElementById('approved-count').textContent = data.approved_count;
+                } else {
+                    console.error('Error loading summary:', data.error);
+                    document.getElementById('total-count').textContent = '?';
+                    document.getElementById('approved-count').textContent = '?';
+                }
+            } catch (error) {
+                console.error('Error loading summary:', error);
+                document.getElementById('total-count').textContent = '?';
+                document.getElementById('approved-count').textContent = '?';
+            }
+        }
+
+        // Load emails
+        async function loadEmails() {
+            try {
+                const response = await fetch('/api/emails');
+                const data = await response.json();
+                
+                const container = document.getElementById('emails-container');
+                
+                if (data.success && data.emails.length > 0) {
+                    container.innerHTML = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Assistant ID</th>
+                                    <th>Name</th>
+                                    <th>Account</th>
+                                    <th>Authorization</th>
+                                    <th>Subject</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.emails.map(email => `
+                                    <tr>
+                                        <td>${email.assistant_id}</td>
+                                        <td>${email.assistant_name}</td>
+                                        <td>${email.account}</td>
+                                        <td><span class="status-badge status-${email.authorization.toLowerCase()}">${email.authorization}</span></td>
+                                        <td>${email.email_subject}</td>
+                                        <td>${new Date(email.processed_date).toLocaleDateString()}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                } else {
+                    container.innerHTML = '<p>No emails found. Run a web search to populate the database.</p>';
+                }
+            } catch (error) {
+                console.error('Error loading emails:', error);
+                document.getElementById('emails-container').innerHTML = '<p>Error loading emails.</p>';
+            }
+        }
+
+        // Run web search
+        async function runWebSearch() {
+            try {
+                const response = await fetch('/api/run_web_search', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Web search started! Check back in a few minutes for results.');
+                    setTimeout(refreshEmails, 5000); // Refresh emails and summary after 5 seconds
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error starting web search: ' + error);
+            }
+        }
+
+        // Refresh emails
+        function refreshEmails() {
+            document.getElementById('emails-container').innerHTML = '<div class="loading">Loading emails...</div>';
+            loadEmails();
+            loadSummary();
+        }
+
+        // Clear database with confirmation
+        async function clearDatabase() {
+            if (confirm('Are you sure you want to delete all email records from the database? This action cannot be undone.')) {
+                try {
+                    const response = await fetch('/api/clear_database', { method: 'POST' });
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        alert(data.message);
+                        refreshEmails(); // Refresh the email list and summary immediately
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                } catch (error) {
+                    alert('Error clearing database: ' + error);
+                }
+            }
+        }
+
+        // Initialize page
+        loadStatus();
+        loadEmails();
+        loadSummary();
+        
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            loadStatus();
+            loadEmails();
+            loadSummary();
+        }, 30000);
+    </script>
+</body>
+</html>
